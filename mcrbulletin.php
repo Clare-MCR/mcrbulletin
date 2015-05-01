@@ -42,7 +42,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 /** Step 1. */
 function bulletin_plugin_menu() {
-        add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-access', 'bulletin_plugin_options', plugins_url('Files/favicon.ico', __FILE__ ) );
+        add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-bulletin', 'bulletin_plugin_options', plugins_url('Files/favicon.ico', __FILE__ ) );
 }
 /** Step 2 (from text above). */
 add_action( 'admin_menu', 'bulletin_plugin_menu' );
