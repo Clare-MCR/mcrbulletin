@@ -41,14 +41,14 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 /** Step 1. */
-function my_plugin_menu() {
-        add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-access', 'my_plugin_options', plugins_url('Files/favicon.ico', __FILE__ ) );
+function bulletin_plugin_menu() {
+        add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-access', 'bulletin_plugin_options', plugins_url('Files/favicon.ico', __FILE__ ) );
 }
 /** Step 2 (from text above). */
-add_action( 'admin_menu', 'my_plugin_menu' );
+add_action( 'admin_menu', 'bulletin_plugin_menu' );
 
 /** Step 3. */
-function my_plugin_options() {
+function bulletin_plugin_options() {
         if ( !current_user_can( 'manage_options' ) )  {
                 wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
         }
