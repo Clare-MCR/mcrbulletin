@@ -62,7 +62,7 @@ function bulletin_plugin_options() {
 			'date_query' => array(
 				array(
 					'year' => date( 'Y' ),
-					'week' => date( 'W' ),
+					'week' => date( 'W' )-1,
 					),
 				),
 			'orderby' => 'date',
