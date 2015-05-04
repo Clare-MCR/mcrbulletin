@@ -73,6 +73,7 @@ function bulletin_plugin_options() {
 		'order' => 'ASC'
 	);
 	$query = new WP_Query( $args );
+	echo $query;
 	if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
 		<!-- do stuff ... -->
 		<h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
