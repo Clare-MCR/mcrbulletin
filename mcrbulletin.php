@@ -49,31 +49,38 @@ add_action( 'admin_menu', 'bulletin_plugin_menu' );
 
 /** Step 3. */
 function bulletin_plugin_options() {
-        if ( !current_user_can( 'manage_options' ) )  {
-                wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
-        }
-         global $wpdb;
-         // subject
-        $subject = 'Birthday Reminders for August';
+	if ( !current_user_can( 'manage_options' ) )  {
+		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+	}
+	global $wpdb;
 
-		$args = array(
-			'category_name' => 'mcr-bulletin',
-			'post_status'	=> 'publish',
-			'date_query' => array(
-				array(
-					'year' => date( 'Y' ),
-					'week' => date( 'W' )-1,
-					),
-				),
-			'orderby' => 'date',
-			'order' => 'ASC'
-		);
-		$query = new WP_Query( $args );
-		if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
+	echo '<div class="wrap">';
+	echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo">';
+	echo date( 'W' )-;
+	// subject
+	$subject = 'Birthday Reminders for August';
+
+	$args = array(
+		'category_name' => 'mcr-bulletin',
+		'post_status'	=> 'publish',
+		'date_query' => array(
+			array(
+				'year' => date( 'Y' ),
+				'week' => date( 'W' )-1,
+			),
+		),
+		'orderby' => 'date',
+		'order' => 'ASC'
+	);
+	$query = new WP_Query( $args );
+	if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
 		<!-- do stuff ... -->
-		 <h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
+		<h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
 		<?php endwhile;
-		endif;
+	endif; ?>
+	</div>
+	<?php
+
 }
 
 
