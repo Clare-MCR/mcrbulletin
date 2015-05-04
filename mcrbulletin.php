@@ -56,7 +56,7 @@ function bulletin_plugin_options() {
 
 	echo '<div class="wrap">';
 	echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo">';
-	echo date( 'W' );
+	echo date( 'W' )-1;
 	// subject
 	$subject = 'Birthday Reminders for August';
 
