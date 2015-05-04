@@ -52,13 +52,55 @@ function bulletin_plugin_options() {
         if ( !current_user_can( 'manage_options' ) )  {
                 wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
         }
-        echo 'hi';
+         global $wpdb;
+         // subject
+        $subject = 'Birthday Reminders for August';
+
+		$args = array(
+			'category_name' => 'mcr-bulletin',
+			'post_status'	=> 'publish',
+			'date_query' => array(
+				array(
+					'year' => date( 'Y' ),
+					'week' => date( 'W' ),
+					),
+				),
+			'orderby' => 'date',
+			'order' => 'ASC'
+		);
+		$query = new WP_Query( $args );
+		if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
+		<!-- do stuff ... -->
+		 <h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
+		<?php endwhile;
+		endif;
 }
+
+
 
 function email_members($post_ID)  {
         global $wpdb;
          // subject
         $subject = 'Birthday Reminders for August';
+
+		$args = array(
+			'category_name' => 'mcr-bulletin',
+			'post_status'	=> 'publish',
+			'date_query' => array(
+				array(
+					'year' => date( 'Y' ),
+					'week' => date( 'W' ),
+					),
+				),
+			'orderby' => 'date',
+			'order' => 'ASC'
+		);
+		$query = new WP_Query( $args );
+		if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
+		<!-- do stuff ... -->
+		 <h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
+		<?php endwhile;
+		endif;
 
         // message
         $message = '
@@ -88,7 +130,7 @@ function email_members($post_ID)  {
 
         // Additional headers
         $headers .= 'From: Clare MCR secretary <mcr-secretary@clare.cam.ac.uk>' . "\r\n";
-        
+
     mail("rjgunning@gmail.com", $Subject, $message, $headers);
     return $post_ID;
 }
