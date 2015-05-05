@@ -52,86 +52,65 @@ function bulletin_plugin_options() {
 	if ( !current_user_can( 'manage_options' ) )  {
 		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 	}
+
 	global $wpdb;
 
 	echo '<div class="wrap">';
 	echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo">';
-	echo date( 'W' )-1;
-	// subject
-	$subject = 'Birthday Reminders for August';
-
+	echo '<br style="clear:left;"/>';
+	$date = new DateTime();
+	$date->sub(new DateInterval('P'.(get_option('start_of_week')-1) .'D')); //Week Starts Monday
 	$args = array(
 		'category_name' => 'mcr-bulletin',
 		'post_status'	=> 'publish',
 		'date_query' => array(
 			array(
 				'year' => date( 'Y' ),
-				'week' => date( 'W' )-1,
+				'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
 			),
 		),
 		'orderby' => 'date',
 		'order' => 'ASC'
 	);
 	$query = new WP_Query( $args );
-	echo $query;
-	if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
-		<!-- do stuff ... -->
-		<h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
-		<?php endwhile;
-	endif; ?>
-	</div>
-	<?php
+	$message='<p>Hi everyone,</p>
 
-}
+<p>Here is the Clare MCR Weekly Bulletin.</p>
+<p>If you want to have something included in the next bulletin drop me an <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a>.</p>
+
+Richard';
+	$message.='<ol>';
+	if ( $query->have_posts() ) :
+		while ( $query->have_posts() ) : $query->the_post();
+			$message.='<li><h2><a href="#'. the_title_attribute('echo=0')  .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
+		endwhile;
+		$message.='</ol><hr><ol>';
+		$query->rewind_posts();
+		while ( $query->have_posts() ) : $query->the_post();
+			$message.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
+			$message.= get_the_content() .' </li>';
+		endwhile;
+	endif;
+	$message.='</ol></div>';
+
+	echo $message;
+	if(isset($_POST['submit'])){
+		email_members($message);
+		echo "Email Sent";}
+	?>
+	<form method="POST">
+		<input type="submit" name="submit" value="Send Email">
+	</form>
+<?php }
 
 
 
-function email_members($post_ID)  {
+function email_members($message)  {
         global $wpdb;
          // subject
-        $subject = 'Birthday Reminders for August';
-
-		$args = array(
-			'category_name' => 'mcr-bulletin',
-			'post_status'	=> 'publish',
-			'date_query' => array(
-				array(
-					'year' => date( 'Y' ),
-					'week' => date( 'W' ),
-					),
-				),
-			'orderby' => 'date',
-			'order' => 'ASC'
-		);
-		$query = new WP_Query( $args );
-		if ( $query->have_posts() ) : while ( $query->have_posts() ) : $query->the_post();?>
-		<!-- do stuff ... -->
-		 <h2><a href="<?php the_permalink() ?>" rel="bookmark" title="Permanent Link to <?php the_title_attribute(); ?>"><?php the_title(); ?></a></h2>
-		<?php endwhile;
-		endif;
+        $subject = 'MCR Bulletin' .current_time('d-m-Y');
 
         // message
-        $message = '
-        <html>
-        <head>
-          <title>Birthday Reminders for August</title>
-        </head>
-        <body>
-          <p>Here are the birthdays upcoming in August!</p>
-          <table>
-            <tr>
-              <th>Person</th><th>Day</th><th>Month</th><th>Year</th>
-            </tr>
-            <tr>
-              <td>Joe</td><td>3rd</td><td>August</td><td>1970</td>
-            </tr>
-            <tr>
-              <td>Sally</td><td>17th</td><td>August</td><td>1973</td>
-            </tr>
-          </table>
-        </body>
-        </html>
-        ';
 
         $headers  = 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
@@ -139,8 +118,8 @@ function email_members($post_ID)  {
         // Additional headers
         $headers .= 'From: Clare MCR secretary <mcr-secretary@clare.cam.ac.uk>' . "\r\n";
 
-    mail("rjgunning@gmail.com", $Subject, $message, $headers);
-    return $post_ID;
+    mail("rjgunning@gmail.com", $subject, $message, $headers);
+    return TRUE;
 }
 
-add_action('publish_post', 'email_members');
+//add_action('publish_post', 'email_members');
