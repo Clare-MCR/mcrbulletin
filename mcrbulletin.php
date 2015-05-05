@@ -73,39 +73,46 @@ function bulletin_plugin_options() {
 		'order' => 'ASC'
 	);
 	$query = new WP_Query( $args );
-	$message='<p>Hi everyone,</p>
-
-<p>Here is the Clare MCR Weekly Bulletin.</p>
-<p>If you want to have something included in the next bulletin drop me an <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a>.</p>
-
-Richard';
-	$message.='<ol>';
+	$message='<ol>';
 	if ( $query->have_posts() ) :
 		while ( $query->have_posts() ) : $query->the_post();
 			$message.='<li><h2><a href="#'. the_title_attribute('echo=0')  .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
 		endwhile;
-		$message.='</ol><hr><ol>';
+		$message.='</ol><hr>';
+		$message2='<ol>';
 		$query->rewind_posts();
 		while ( $query->have_posts() ) : $query->the_post();
-			$message.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
-			$message.= get_the_content() .' </li>';
+			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
+			$message2.= get_the_content() .' </li>';
 		endwhile;
 	endif;
-	$message.='</ol></div>';
+	$message2.='</ol></div>';
 
-	echo $message;
 	if(isset($_POST['submit'])){
-		email_members($message);
-		echo "Email Sent";}
+		echo "<h3>Email Sent</h3> <br><hr>";
+		echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header']."<hr>".$message.$message2 ."<br>";
+		email_members('<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header'].$message.$message2, $_POST['to'], $_POST['from']);
+	} else {
+		echo $message. "</div>";
+	}
 	?>
-	<form method="POST">
-		<input type="submit" name="submit" value="Send Email">
+	<hr><form method="POST" id="usrform">
+		<table>
+		<tr><td>To:</td><td><input type="text" name="to" value="clare-mcr@lists.cam.ac.uk" style="width: 300px;" /></td></tr>
+		<tr><td>From:</td><td><input type="text" name="from" value="mcr-secretary@clare.cam.ac.uk" style="width: 300px;" /></td></tr>
+		<tr><td>Message:</td><td><textarea name="header" form="usrform" style="width: 300px;height:300px">
+<p>Hi everyone,</p>
+<p>Here is the Clare MCR Weekly Bulletin.</p>
+<p>If you want to have something included in the next bulletin drop me an <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a>.</p>
+<p>A new MCR Bulletin newsletters will be sent out every Thursday with the latest events. View the <a href="http://mcr.clare.cam.ac.uk/category/mcr-bulletin">website</a> to view the full list of bulletin items.</p>
+Richard</textarea></td></tr>
+		<tr><td><input type="submit" name="submit" value="Send Email"></td></tr></table>
 	</form>
 <?php }
 
 
 
-function email_members($message)  {
+function email_members($message, $to, $from)  {
         global $wpdb;
          // subject
         $subject = 'MCR Bulletin' .current_time('d-m-Y');
@@ -116,9 +123,9 @@ function email_members($message)  {
         $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 
         // Additional headers
-        $headers .= 'From: Clare MCR secretary <mcr-secretary@clare.cam.ac.uk>' . "\r\n";
+        $headers .= 'From: Clare MCR secretary <'. $from. '>' . "\r\n";
 
-    mail("rjgunning@gmail.com", $subject, $message, $headers);
+    mail($to, $subject, $message, $headers);
     return TRUE;
 }
 
