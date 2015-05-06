@@ -82,7 +82,8 @@ function bulletin_plugin_options() {
 		$message2='<ol>';
 		$query->rewind_posts();
 		while ( $query->have_posts() ) : $query->the_post();
-			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
+			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
+			#$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
 			$message2.= get_the_content() .' </li>';
 		endwhile;
 	endif;
@@ -104,7 +105,7 @@ function bulletin_plugin_options() {
 <p>Hi everyone,</p>
 <p>Here is the Clare MCR Weekly Bulletin.</p>
 <p>If you want to have something included in the next bulletin drop me an <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a>.</p>
-<p>A new MCR Bulletin newsletters will be sent out every Thursday with the latest events. View the <a href="http://mcr.clare.cam.ac.uk/category/mcr-bulletin">website</a> to view the full list of bulletin items.</p>
+<p>A new MCR Bulletin newsletters will be sent out every Thursday with the latest events. View the <a href="http://mcr.clare.cam.ac.uk/category/mcr-bulletin">website</a> to see the full list of bulletin items.</p>
 Richard</textarea></td></tr>
 		<tr><td><input type="submit" name="submit" value="Send Email"></td></tr></table>
 	</form>
