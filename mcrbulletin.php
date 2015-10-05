@@ -6,9 +6,6 @@
  * Version: 0.0.1
  * Author: Richard Gunning
  * Author URI: http://rjgunning.com
- * Text Domain: Optional. Plugin's text domain for localization. Example: mytextdomain
- * Domain Path: Optional. Plugin's relative directory path to .mo files. Example: /locale/
- * Network: Optional. Whether the plugin can only be activated network wide. Example: true
  * License: MIT
  */
 
@@ -66,14 +63,13 @@ function bulletin_plugin_options() {
 		'date_query' => array(
 			array(
 				'year' => date( 'Y' ),
-				'week' => $date->format('W')-2, //MYSQL starts from 0 and Sunday. View previous week
+				'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
 			),
 		),
 		'orderby' => 'date',
 		'order' => 'ASC'
 	);
 	$query = new WP_Query( $args );
-	//echo $query->request; 
 	$message='<ol>';
 	if ( $query->have_posts() ) :
 		while ( $query->have_posts() ) : $query->the_post();
@@ -84,7 +80,6 @@ function bulletin_plugin_options() {
 		$query->rewind_posts();
 		while ( $query->have_posts() ) : $query->the_post();
 			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
-			#$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2>'. get_the_title() .'</h2>';
 			$message2.= get_the_content() .' </li>';
 		endwhile;
 	endif;
@@ -120,7 +115,6 @@ function email_members($message, $to, $from)  {
         $subject = 'MCR Bulletin ' .current_time('d-m-Y');
 
         // message
-
         $headers  = 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 
