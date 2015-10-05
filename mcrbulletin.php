@@ -66,13 +66,14 @@ function bulletin_plugin_options() {
 		'date_query' => array(
 			array(
 				'year' => date( 'Y' ),
-				'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
+				'week' => $date->format('W')-2, //MYSQL starts from 0 and Sunday. View previous week
 			),
 		),
 		'orderby' => 'date',
 		'order' => 'ASC'
 	);
 	$query = new WP_Query( $args );
+	//echo $query->request; 
 	$message='<ol>';
 	if ( $query->have_posts() ) :
 		while ( $query->have_posts() ) : $query->the_post();
@@ -116,7 +117,7 @@ Richard</textarea></td></tr>
 function email_members($message, $to, $from)  {
         global $wpdb;
          // subject
-        $subject = 'MCR Bulletin' .current_time('d-m-Y');
+        $subject = 'MCR Bulletin ' .current_time('d-m-Y');
 
         // message
 
