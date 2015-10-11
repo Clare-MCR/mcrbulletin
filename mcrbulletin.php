@@ -63,7 +63,7 @@ function bulletin_plugin_options() {
 		'date_query' => array(
 			array(
 				'year' => date( 'Y' ),
-				'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
+				'week' => $date->format('W')-2, //MYSQL starts from 0 and Sunday. View previous week
 			),
 		),
 		'orderby' => 'date',
