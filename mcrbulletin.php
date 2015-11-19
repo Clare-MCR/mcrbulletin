@@ -86,8 +86,8 @@ function bulletin_plugin_options() {
 
 	if(isset($_POST['submit'])){
 		echo "<h3>Email Sent</h3> <br><hr>";
-		echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header']."<hr>".$message.$message2 ."<br>";
-		email_members('<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header'].$message.$message2, $_POST['to'], $_POST['from']);
+		echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.strip_tags($_POST['header'])."<hr>".$message.$message2 ."<br>";
+		email_members('<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.strip_tags($_POST['header']).$message.$message2, strip_tags($_POST['to']), strip_tags($_POST['from']));
 	} else {
 		echo $message. "</div>";
 	}
