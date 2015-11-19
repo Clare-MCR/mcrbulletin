@@ -71,19 +71,18 @@ function bulletin_plugin_options() {
 	);
 	$query = new WP_Query( $args );
 	$message='<ol>';
+	$message2='<ol>';
 	if ( $query->have_posts() ) :
 		while ( $query->have_posts() ) : $query->the_post();
+			$content = apply_filters( 'the_content', get_the_content() );
+			$content = str_replace( ']]>', ']]&gt;', $content );
 			$message.='<li><h2><a href="#'. the_title_attribute('echo=0')  .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
+			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
+			$message2.= $content .' </li>';
 		endwhile;
 		$message.='</ol><hr>';
-		$message2='<ol>';
-		$query->rewind_posts();
-		while ( $query->have_posts() ) : $query->the_post();
-			$message2.='<li><a name="'. the_title_attribute('echo=0') .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
-			$message2.= get_the_content() .' </li>';
-		endwhile;
+		$message2.='</ol></div>';
 	endif;
-	$message2.='</ol></div>';
 
 	if(isset($_POST['submit'])){
 		echo "<h3>Email Sent</h3> <br><hr>";
