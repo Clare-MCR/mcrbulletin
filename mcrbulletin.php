@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: mcrbulletin
- * Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
+ * Plugin URI: http://github.com/Clare-MCR/mcrbulletin
  * Description: Clare MCR Bulletin
- * Version: 0.0.1
+ * Version: 1.0.0
  * Author: Richard Gunning
  * Author URI: http://rjgunning.com
  * License: MIT
