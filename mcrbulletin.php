@@ -3,7 +3,7 @@
  * Plugin Name: mcrbulletin
  * Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
  * Description: Clare MCR Bulletin
- * Version: 0.0.1
+ * Version: 0.0.2
  * Author: Richard Gunning
  * Author URI: http://rjgunning.com
  * License: MIT
@@ -57,18 +57,23 @@ function bulletin_plugin_options() {
 	echo '<br style="clear:left;"/>';
 	$date = new DateTime();
 	$date->sub(new DateInterval('P'.(get_option('start_of_week')-1) .'D')); //Week Starts Monday
-	$args = array(
-		'category_name' => 'mcr-bulletin',
-		'post_status'	=> 'publish',
-		'date_query' => array(
-			array(
-				'year' => date( 'Y' ),
-				'week' => $date->format('W')-2, //MYSQL starts from 0 and Sunday. View previous week
-			),
-		),
-		'orderby' => 'date',
-		'order' => 'ASC'
+	$args = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','orderby' => 'date','order' => 'ASC','relation' => 'OR');
+	$args['meta_query']=array(
+    		array(
+			'date_query' => array(
+                        	array(
+                                	'year' => date( 'Y' ),
+                                	'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
+                        ),
+        		'compare' => 'LIKE'
+    		),
+    		array(
+        		'meta_key' => 'end_date',
+        		'meta_value' => $date->format("Ymd"),
+        		'compare' => '>'
+    		),
 	);
+
 	$query = new WP_Query( $args );
 	$message='<ol>';
 	$message2='<ol>';
