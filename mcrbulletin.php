@@ -55,30 +55,37 @@ function bulletin_plugin_options() {
 	echo '<div class="wrap">';
 	echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo">';
 	echo '<br style="clear:left;"/>';
-	$date = new DateTime();
-	$date->sub(new DateInterval('P'.(get_option('start_of_week')-1) .'D')); //Week Starts Monday
-	$args = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','orderby' => 'date','order' => 'ASC','relation' => 'OR');
-	$args['meta_query']=array(
-    		array(
-			'date_query' => array(
-                        	array(
-                                	'year' => date( 'Y' ),
-                                	'week' => $date->format('W')-1, //MYSQL starts from 0 and Sunday. View previous week
-                        ),
-        		'compare' => 'LIKE'
-    		),
-    		array(
-        		'meta_key' => 'end_date',
-        		'meta_value' => $date->format("Ymd"),
-        		'compare' => '>'
-    		),
+	$now = new DateTime();
+//	$date->sub(new DateInterval('P'.(get_option('start_of_week')-1) .'D')); //Week Starts Monday
+	$date  = new DateTime();
+	$date->setTimestamp(mktime(0, 0, 0, date("m")  , date("d")-7, date("Y")));
+	$args = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','posts_per_page'=>-1,'orderby' => 'date','order' => 'ASC',
+			'date_query' => array('after'=>array('year' => $date->format('Y'),'month' => $date->format('m'),'day'=>$date->format('d'))));
+    $args2 = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','posts_per_page'=>-1,'orderby' => 'date','order' => 'ASC',
+                   'meta_query' => array('relation' => 'AND',
+	                   array('key' => 'end_date', 'value' => $now->format("Ymd"),'type'=>'NUMERIC', 'compare' => '>' ),
+	                   array('key' => 'repeat_post', 'value' => 1, 'type' => 'NUMERIC','compare'=> '=')
+                   ),
+                   'date_query' => array('before'=>array('year' => $date->format('Y'),'month' => $date->format('m'),'day'=>$date->format('d')))
+
 	);
 
 	$query = new WP_Query( $args );
-	$message='<ol>';
-	$message2='<ol>';
-	if ( $query->have_posts() ) :
+	$query2 = new WP_Query( $args2 );
+
+//echo $query->request;
+
+	if ( $query->have_posts() || $query2->have_posts() ) :
+		$message='<ol>';
+		$message2='<ol>';
 		while ( $query->have_posts() ) : $query->the_post();
+			$content = apply_filters( 'the_content', get_the_content() );
+			$content = str_replace( ']]>', ']]&gt;', $content );
+			$message.='<li><h2><a href="#'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
+			$message2.='<li><a name="'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
+			$message2.= $content .' </li>';
+		endwhile;
+		while ( $query2->have_posts() ) : $query2->the_post();
 			$content = apply_filters( 'the_content', get_the_content() );
 			$content = str_replace( ']]>', ']]&gt;', $content );
 			$message.='<li><h2><a href="#'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
@@ -88,6 +95,8 @@ function bulletin_plugin_options() {
 		$message.='</ol><hr>';
 		$message2.='</ol></div>';
 	endif;
+
+
 
 	if(isset($_POST['submit'])){
 		echo "<h3>Email Sent</h3> <br><hr>";
@@ -115,8 +124,6 @@ Clare MCR Secretary</p>
 		<tr><td><input type="submit" name="submit" value="Send Email"></td></tr></table>
 	</form>
 <?php }
-
-
 
 function email_members($message, $to, $from)  {
         global $wpdb;
