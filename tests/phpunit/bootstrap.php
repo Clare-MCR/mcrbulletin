@@ -18,7 +18,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-require_once(dirname(__FILE__) . '/autoload.php');
+//require_once(dirname(__FILE__) . '/autoload.php');
 // discover the WordPress testing framework
 $_tests_dir = getenv('WP_TESTS_DIR');
 if (! $_tests_dir) {
