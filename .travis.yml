@@ -15,46 +15,61 @@ cache:
   - composer
   - $HOME/.composer/cache
 
+# Declare versions of PHP to test
+php:
+  # aliased to a recent 7.1.x version
+  - 7.1
+  # aliased to a recent 7.0.x version
+  - 7.0
+  # aliased to a recent 5.6.x version
+  - 5.6
+  # aliased to a recent 5.5.x version
+  - 5.5
+  # aliased to a recent 5.4.x version
+  - 5.4
+
+# WordPress comes from the Git mirror, where 'master' mirrors svn 'trunk' and
+# x.y mirrors the latest from the x.y branch
+env:
+  # WordPress 4.7
+  - WP_VERSION=4.7
+  # WordPress 4.6
+  - WP_VERSION=4.6
+  # WordPress 4.5
+  - WP_VERSION=4.5
+  # WordPress 4.4
+  - WP_VERSION=4.4
+  # WordPress 4.3
+  - WP_VERSION=4.3
+  # WordPress 4.2
+  - WP_VERSION=4.2
+  # WordPress 4.1
+  - WP_VERSION=4.1
+
 matrix:
-  include:
-    - php: 7.1
-      env: WP_VERSION=latest
-    - php: 7.0
-      env: WP_VERSION=latest
-    - php: 5.6
-      env: WP_VERSION=4.4
-    - php: 5.6
-      env: WP_VERSION=latest
-    - php: 5.6
-      env: WP_VERSION=trunk
-    - php: 5.6
-      env: WP_TRAVISCI=phpcs
-    - php: 5.3
-      env: WP_VERSION=latest
+  fast_finish: true
+
 
 before_script:
-  - export PATH="$HOME/.composer/vendor/bin:$PATH"
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-      if [[ ${TRAVIS_PHP_VERSION:0:2} == "7." ]]; then
-        composer global require "phpunit/phpunit=5.7.*"
-      else
-        composer global require "phpunit/phpunit=4.8.*"
-      fi
-    fi
-  - |
-    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-      composer global require wp-coding-standards/wpcs
-      phpcs --config-set installed_paths $HOME/.composer/vendor/wp-coding-standards/wpcs
-    fi
-script:
-  - |
-    if [[ ! -z "$WP_VERSION" ]] ; then
-      phpunit
-      WP_MULTISITE=1 phpunit
-    fi
-  - |
-    if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-      phpcs --standard=phpcs.ruleset.xml $(find . -name '*.php')
-    fi
+  # set up WP install
+  - export WP_DEVELOP_DIR=/tmp/wordpress/
+  - mkdir -p $WP_DEVELOP_DIR
+  - git clone --depth=1 --branch="$WP_VERSION" git://develop.git.wordpress.org/ $WP_DEVELOP_DIR
+  - plugin_slug=$(basename $(pwd))
+  - plugin_dir=$WP_DEVELOP_DIR/src/wp-content/plugins/$plugin_slug
+  - cd ..
+  - mv $plugin_slug $plugin_dir
+  # set up tests config
+  - cd $WP_DEVELOP_DIR
+  - echo $WP_DEVELOP_DIR
+  - cp wp-tests-config-sample.php wp-tests-config.php
+  - sed -i "s/youremptytestdbnamehere/wordpress_test/" wp-tests-config.php
+  - sed -i "s/yourusernamehere/travis/" wp-tests-config.php
+  - sed -i "s/yourpasswordhere//" wp-tests-config.php
+  # create database
+  - mysql -e 'CREATE DATABASE wordpress_test;' -uroot
+  # prepare for running the tests
+  - cd $plugin_dir
+
+script: phpunit
+
