@@ -34,111 +34,206 @@ SOFTWARE.
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-        die();
+	die();
 }
 
 /** Step 1. */
-function bulletin_plugin_menu() {
-        add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-bulletin', 'bulletin_plugin_options', plugins_url('Files/favicon.ico', __FILE__ ) );
+function mcrbulletin_plugin_menu() {
+	add_menu_page( 'MCR Bulletin', 'MCR Bulletin', 'manage_options', 'clare-mcr-bulletin', 'mcrbulletin_frontend', plugins_url( 'Files/favicon.ico', __FILE__ ) );
 }
-/** Step 2 (from text above). */
-add_action( 'admin_menu', 'bulletin_plugin_menu' );
 
-/** Step 3. */
-function bulletin_plugin_options() {
-	if ( !current_user_can( 'manage_options' ) )  {
+/** Step 2 (from text above). */
+add_action( 'admin_menu', 'mcrbulletin_plugin_menu' );
+
+
+function mcrbulletin_frontend() {
+	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
 	}
-
-	global $wpdb;
-
+	list ( $postlist, $message_long ) = mcrbulletin_getposts();
 	echo '<div class="wrap">';
-	echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo">';
+	echo '<img src="' . plugins_url( 'Files/logo.png', __FILE__ ) . '" alt="Logo">';
 	echo '<br style="clear:left;"/>';
-	$now = new DateTime();
+	echo $postlist . "</div>";
+
+	$editor_id   = "mcrbulletin_header";
+	$settings = array(
+		'wpautop'          => true,
+		// Whether to use wpautop for adding in paragraphs. Note that the paragraphs are added automatically when wpautop is false.
+		'media_buttons'    => true,
+		// Whether to display media insert/upload buttons
+		'textarea_name'    => $editor_id,
+		// The name assigned to the generated textarea and passed parameter when the form is submitted.
+		'textarea_rows'    => get_option( 'default_post_edit_rows', 10 ),
+		// The number of rows to display for the textarea
+		'tabindex'         => '',
+		// The tabindex value used for the form field
+		'editor_css'       => '',
+		// Additional CSS styling applied for both visual and HTML editors buttons, needs to include <style> tags, can use "scoped"
+		'editor_class'     => '',
+		// Any extra CSS Classes to append to the Editor textarea
+		'teeny'            => false,
+		// Whether to output the minimal editor configuration used in PressThis
+		'dfw'              => false,
+		// Whether to replace the default fullscreen editor with DFW (needs specific DOM elements and CSS)
+		'tinymce'          => true,
+		// Load TinyMCE, can be used to pass settings directly to TinyMCE using an array
+		'quicktags'        => true,
+		// Load Quicktags, can be used to pass settings directly to Quicktags using an array. Set to false to remove your editor's Visual and Text tabs.
+		'drag_drop_upload' => true
+		// Enable Drag & Drop Upload Support (since WordPress 3.9)
+	);
+	$content  = "";
+	include( "Templates/defaultEmail.php" );
+	?>
+    <br>
+    <table>
+        <tr>
+            <td><label for="mcrbulletin_to">To:</label></td>
+            <td><input type="text" id="mcrbulletin_to" name="mcrbulletin_to" value="clare-mcr@lists.cam.ac.uk"
+                       style="width: 300px;"/></td>
+        </tr>
+        <tr>
+            <td><label for="mcrbulletin_from">From:</label></td>
+            <td><input type="text" id="mcrbulletin_from" name="mcrbulletin_from" value="mcr-secretary@clare.cam.ac.uk"
+                       style="width: 300px;"/></td>
+        </tr>
+    </table>
+	<?php
+	wp_editor( $content, $editor_id, $settings );
+	submit_button( 'Submit' );
+	// add javaScript to handle the submit button click,
+	// and send the form data to WP backend,
+	// then refresh on success.
+	?>
+    <script>
+        (function ($) {
+            $('#submit').on('click', function (e) {
+                var content = $('#mcrbulletin_header').val();
+                var to = $('#mcrbulletin_to').val();
+                var from = $('#mcrbulletin_from').val();
+                $.post('<?php echo get_admin_url( null, '/admin-post.php' ) ?>',
+                    {
+                        action: 'mcrbulletin',
+                        content: content,
+                        to: to,
+                        from: from
+                    },
+                    function (response) {
+
+                        // looks good
+                        console.log(response);
+
+                        // reload the latest content
+                        window.location.reload();
+                    });
+            });
+        })(jQuery);
+    </script>
+	<?php
+}
+
+function mcrbulletin_getposts() {
+	global $wpdb;
+	$message  = "";
+	$message2 = "";
+	$now      = new DateTime();
 //	$date->sub(new DateInterval('P'.(get_option('start_of_week')-1) .'D')); //Week Starts Monday
-	$date  = new DateTime();
-	$date->setTimestamp(mktime(0, 0, 0, date("m")  , date("d")-7, date("Y")));
-	$args = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','posts_per_page'=>-1,'orderby' => 'date','order' => 'ASC',
-			'date_query' => array('after'=>array('year' => $date->format('Y'),'month' => $date->format('m'),'day'=>$date->format('d'))));
-    $args2 = array('category_name' => 'mcr-bulletin','post_status'   => 'publish','posts_per_page'=>-1,'orderby' => 'date','order' => 'ASC',
-                   'meta_query' => array('relation' => 'AND',
-	                   array('key' => 'end_date', 'value' => $now->format("Ymd"),'type'=>'NUMERIC', 'compare' => '>' ),
-	                   array('key' => 'repeat_post', 'value' => 1, 'type' => 'NUMERIC','compare'=> '=')
-                   ),
-                   'date_query' => array('before'=>array('year' => $date->format('Y'),'month' => $date->format('m'),'day'=>$date->format('d')))
+	$date = new DateTime();
+	$date->setTimestamp( mktime( 0, 0, 0, date( "m" ), date( "d" ) - 7, date( "Y" ) ) );
+	$args   = array(
+		'category_name'  => 'mcr-bulletin',
+		'post_status'    => 'publish',
+		'posts_per_page' => - 1,
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+		'date_query'     => array(
+			'after' => array(
+				'year'  => $date->format( 'Y' ),
+				'month' => $date->format( 'm' ),
+				'day'   => $date->format( 'd' )
+			)
+		)
+	);
+	$args2  = array(
+		'category_name'  => 'mcr-bulletin',
+		'post_status'    => 'publish',
+		'posts_per_page' => - 1,
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+		'meta_query'     => array(
+			'relation' => 'AND',
+			array( 'key' => 'end_date', 'value' => $now->format( "Ymd" ), 'type' => 'NUMERIC', 'compare' => '>' ),
+			array( 'key' => 'repeat_post', 'value' => 1, 'type' => 'NUMERIC', 'compare' => '=' )
+		),
+		'date_query'     => array(
+			'before' => array(
+				'year'  => $date->format( 'Y' ),
+				'month' => $date->format( 'm' ),
+				'day'   => $date->format( 'd' )
+			)
+		)
 
 	);
-
-	$query = new WP_Query( $args );
+	$query  = new WP_Query( $args );
 	$query2 = new WP_Query( $args2 );
-
-//echo $query->request;
-
 	if ( $query->have_posts() || $query2->have_posts() ) :
-		$message='<ol>';
-		$message2='<ol>';
+		$message  = '<ol>';
+		$message2 = '<ol>';
 		while ( $query->have_posts() ) : $query->the_post();
-			$content = apply_filters( 'the_content', get_the_content() );
-			$content = str_replace( ']]>', ']]&gt;', $content );
-			$message.='<li><h2><a href="#'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
-			$message2.='<li><a name="'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
-			$message2.= $content .' </li>';
+			$content  = apply_filters( 'the_content', get_the_content() );
+			$content  = str_replace( ']]>', ']]&gt;', $content );
+			$message  .= '<li><h2><a href="#' . preg_replace( '/\s+/', '', the_title_attribute( 'echo=0' ) ) . '" rel="bookmark" title="Anchor Link to ' . the_title_attribute( 'echo=0' ) . '"> ' . get_the_title() . ' </a></h2></li>';
+			$message2 .= '<li><a name="' . preg_replace( '/\s+/', '', the_title_attribute( 'echo=0' ) ) . '"></a><h2><a href="' . get_the_permalink() . '" rel="bookmark" title="Permanent Link to ' . the_title_attribute( 'echo=0' ) . '">' . get_the_title() . '</a></h2>';
+			$message2 .= $content . ' </li>';
 		endwhile;
 		while ( $query2->have_posts() ) : $query2->the_post();
-			$content = apply_filters( 'the_content', get_the_content() );
-			$content = str_replace( ']]>', ']]&gt;', $content );
-			$message.='<li><h2><a href="#'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'" rel="bookmark" title="Anchor Link to '. the_title_attribute('echo=0') .'"> '. get_the_title() .' </a></h2></li>';
-			$message2.='<li><a name="'. preg_replace('/\s+/', '', the_title_attribute('echo=0')) .'"></a><h2><a href="'. get_the_permalink() .'" rel="bookmark" title="Permanent Link to '. the_title_attribute('echo=0').'">'. get_the_title().'</a></h2>';
-			$message2.= $content .' </li>';
+			$content  = apply_filters( 'the_content', get_the_content() );
+			$content  = str_replace( ']]>', ']]&gt;', $content );
+			$message  .= '<li><h2><a href="#' . preg_replace( '/\s+/', '', the_title_attribute( 'echo=0' ) ) . '" rel="bookmark" title="Anchor Link to ' . the_title_attribute( 'echo=0' ) . '"> ' . get_the_title() . ' </a></h2></li>';
+			$message2 .= '<li><a name="' . preg_replace( '/\s+/', '', the_title_attribute( 'echo=0' ) ) . '"></a><h2><a href="' . get_the_permalink() . '" rel="bookmark" title="Permanent Link to ' . the_title_attribute( 'echo=0' ) . '">' . get_the_title() . '</a></h2>';
+			$message2 .= $content . ' </li>';
 		endwhile;
-		$message.='</ol><hr>';
-		$message2.='</ol></div>';
+		$message  .= '</ol><hr>';
+		$message2 .= '</ol></div>';
 	endif;
 
+	return array( $message, $message2 );
+}
 
 
-	if(isset($_POST['submit'])){
-		echo "<h3>Email Sent</h3> <br><hr>";
-		echo '<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header']."<hr>".$message.$message2 ."<br>";
-		email_members('<img src="'.plugins_url('Files/logo.png',__FILE__ ).'" alt="Logo"><br>'.$_POST['header'].$message.$message2, strip_tags($_POST['to']), strip_tags($_POST['from']));
-	} else {
-		echo $message. "</div>";
-	}
-	?>
-	<hr><form method="POST" id="usrform">
-		<table>
-		<tr><td>To:</td><td><input type="text" name="to" value="clare-mcr@lists.cam.ac.uk" style="width: 300px;" /></td></tr>
-		<tr><td>From:</td><td><input type="text" name="from" value="mcr-secretary@clare.cam.ac.uk" style="width: 300px;" /></td></tr>
-		<tr><td>Message:</td><td><textarea name="header" form="usrform" style="width: 300px;height:300px">
-<p>Dear Clare MCR,</p>
-<p>The Weekly Clare MCR Bulletin has been included below.</p>
-<p>If you want to have something included in the next bulletin drop me an <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a>.</p>
-<p>A new MCR Bulletin newsletter will be sent out every Thursday with the latest events. View the <a href="http://mcr.clare.cam.ac.uk/category/mcr-bulletin">website</a> to see the full list of bulletin items.</p>
+add_action( 'admin_post_mcrbulletin', 'mcrbulletin_admin_submit' );
 
-<p>Kind Regards,<br>
-Richard Gunning<br>
-Clare MCR Secretary</p>
+function mcrbulletin_admin_submit() {
 
-<hr><p style="font-size: smaller;">Clare College MCR hold no responsibility for the content of Bulletin items, see <a href="http://mcr.clare.cam.ac.uk/disclaimer">disclaimer</a>. The MCR bulletin is an unmoderated news feed of adverts sent to us to display. The Clare College MCR does not control, monitor or guarantee the information contained in the MCR bulletin or information contained in links to other external websites, and does not endorse any views expressed or products or services offered therein. All items on the MCR bulletin are viewable via the MCR website, social media and email as part of an effort to engage the broader Cambridge community. If you take offence with any item, please contact us by <a href="mailto:mcr-secretary@clare.cam.ac.uk">email</a> and we will endeavour to remove or edit the item to remove offence after appropriate contact the relevant advertising parties.</p><hr></textarea></td></tr>
-		<tr><td><input type="submit" name="submit" value="Send Email"></td></tr></table>
-	</form>
-<?php }
+	status_header( 200 );
+	list ( $postlist, $message_long ) = mcrbulletin_getposts();
 
-function email_members($message, $to, $from)  {
-        global $wpdb;
-         // subject
-        $subject = 'MCR Bulletin ' .current_time('d-m-Y');
+	$content = wp_kses_post( $_POST['content'] );
+	$from    = sanitize_email( $_POST['from'] );
+	$to      = sanitize_email( $_POST['to'] );
 
-        // message
-        $headers  = "MIME-Version: 1.0" . "\r\n"; 
-        $headers .= "Content-type: text/html; charset=UTF-8" . "\r\n"; 
+	$message = '<img src="' . plugins_url( 'Files/logo.png', __FILE__ ) . '" alt="Logo">';
+	$message .= '<br>' . $content . $postlist . $message_long;
+	mcrbulletin_email_members( $message, $to, $from );
+	die( "Email Sent" );
+}
 
-        // Additional headers
-        $headers .= "From: Clare MCR secretary <". $from. ">\r\n";
 
-    mail($to, $subject, $message, $headers);
-    return TRUE;
+function mcrbulletin_email_members( $message, $to, $from ) {
+	// subject
+	$subject = 'MCR Bulletin ' . current_time( 'd-m-Y' );
+
+	// message
+	$headers = "MIME-Version: 1.0" . "\r\n";
+	$headers .= "Content-type: text/html; charset=UTF-8" . "\r\n";
+
+	// Additional headers
+	$headers .= "From: Clare MCR secretary <" . $from . ">\r\n";
+
+	wp_mail( $to, $subject, $message, $headers );
+
+	return true;
 }
 
 //add_action('publish_post', 'email_members');
